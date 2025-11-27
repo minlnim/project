@@ -48,6 +48,18 @@ output "frontend_ecr_repo_url" {
   value       = aws_ecr_repository.frontend.repository_url
 }
 
+# ArgoCD
+output "argocd_server_url" {
+  description = "ArgoCD 서버 외부 접속 URL"
+  value       = var.enable_argocd ? "https://${try(data.kubernetes_service.argocd_server[0].status[0].load_balancer[0].ingress[0].hostname, "pending")}" : "ArgoCD not enabled"
+}
+
+output "argocd_admin_password" {
+  description = "ArgoCD 초기 admin 비밀번호 (kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
+  value       = "Run: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d"
+  sensitive   = false
+}
+
 # NLB
 output "nlb_dns_name" {
   description = "API Gateway VPC Link가 호출할 NLB DNS 이름"

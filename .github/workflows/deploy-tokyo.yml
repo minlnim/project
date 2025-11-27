@@ -98,3 +98,52 @@ jobs:
         run: |
           kubectl get pods -n default
           kubectl get svc -n default
+
+      - name: Deploy Frontend to Elastic Beanstalk
+        working-directory: ./tokyo/frontend
+        run: |
+          # Dockerrun.aws.json 업데이트
+          cat > Dockerrun.aws.json <<EOF
+          {
+            "AWSEBDockerrunVersion": "1",
+            "Image": {
+              "Name": "${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_FRONTEND_REPO }}:latest",
+              "Update": "true"
+            },
+            "Ports": [
+              {
+                "ContainerPort": 80,
+                "HostPort": 80
+              }
+            ]
+          }
+          EOF
+          
+          # 배포 패키지 생성
+          zip -r deploy.zip Dockerrun.aws.json .ebextensions || zip -r deploy.zip Dockerrun.aws.json
+          
+          # S3에 업로드
+          aws s3 cp deploy.zip s3://elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}/tokyo-frontend/deploy-$(date +%Y%m%d-%H%M%S).zip
+          
+          # Elastic Beanstalk 애플리케이션 버전 생성
+          VERSION_LABEL="tokyo-frontend-$(date +%Y%m%d-%H%M%S)"
+          aws elasticbeanstalk create-application-version \
+            --application-name tokyo-webapp \
+            --version-label $VERSION_LABEL \
+            --source-bundle S3Bucket="elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}",S3Key="tokyo-frontend/deploy-$(date +%Y%m%d-%H%M%S).zip"
+          
+          # Elastic Beanstalk 환경에 배포
+          aws elasticbeanstalk update-environment \
+            --application-name tokyo-webapp \
+            --environment-name tokyo-webapp-env \
+            --version-label $VERSION_LABEL
+          
+          echo "Frontend deployment to Elastic Beanstalk initiated"
+
+      - name: Wait for Elastic Beanstalk deployment
+        run: |
+          echo "Waiting for Elastic Beanstalk environment to be ready..."
+          aws elasticbeanstalk wait environment-updated \
+            --application-name tokyo-webapp \
+            --environment-names tokyo-webapp-env \
+            || echo "Deployment may still be in progress"

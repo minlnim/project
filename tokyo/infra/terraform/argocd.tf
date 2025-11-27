@@ -2,6 +2,21 @@
 # ArgoCD Installation & Configuration
 ########################################
 
+# Wait for EKS cluster to be fully ready
+resource "null_resource" "update_kubeconfig" {
+  count = var.enable_argocd ? 1 : 0
+
+  triggers = {
+    cluster_endpoint = try(module.eks.cluster_endpoint, "")
+  }
+
+  provisioner "local-exec" {
+    command = "aws eks update-kubeconfig --region ${var.aws_region} --name ${module.eks.cluster_name}"
+  }
+
+  depends_on = [module.eks, null_resource.wait_for_cluster]
+}
+
 # ArgoCD Namespace
 resource "kubernetes_namespace" "argocd" {
   count = var.enable_argocd ? 1 : 0
@@ -10,7 +25,7 @@ resource "kubernetes_namespace" "argocd" {
     name = "argocd"
   }
 
-  depends_on = [module.eks, null_resource.wait_for_cluster]
+  depends_on = [null_resource.update_kubeconfig]
 }
 
 # ArgoCD Helm Release
@@ -45,7 +60,11 @@ resource "helm_release" "argocd" {
 
       server = {
         service = {
-          type = "NodePort"
+          type = "LoadBalancer"
+          annotations = {
+            "service.beta.kubernetes.io/aws-load-balancer-type" = "nlb"
+            "service.beta.kubernetes.io/aws-load-balancer-scheme" = "internet-facing"
+          }
         }
 
         ingress = {
@@ -88,6 +107,7 @@ resource "helm_release" "argocd" {
 
   depends_on = [
     kubernetes_namespace.argocd[0],
+    null_resource.update_kubeconfig,
     module.eks
   ]
 }
@@ -163,6 +183,22 @@ resource "kubernetes_secret" "argocd_repo" {
     url      = var.argocd_repo_url
     username = var.argocd_repo_username
     password = var.argocd_repo_password
+  }
+
+  depends_on = [
+    helm_release.argocd[0]
+  ]
+}
+
+########################################
+# ArgoCD LoadBalancer DNS Output
+########################################
+data "kubernetes_service" "argocd_server" {
+  count = var.enable_argocd ? 1 : 0
+
+  metadata {
+    name      = "argocd-server"
+    namespace = kubernetes_namespace.argocd[0].metadata[0].name
   }
 
   depends_on = [
