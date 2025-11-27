@@ -17,18 +17,22 @@ cognito_domain_prefix = "corp-portal-seoul-demo"
 
 # 로그인/로그아웃 URL (API Gateway 도메인으로 설정 예정)
 cognito_callback_urls = [
-  "http://localhost:3000/callback"
+  "http://localhost:3000/callback",
+  "https://d2msw6fd56l45o.cloudfront.net/callback",
+  "https://d2msw6fd56l45o.cloudfront.net"
 ]
 
 cognito_logout_urls = [
-  "http://localhost:3000/"
+  "http://localhost:3000/",
+  "https://d2msw6fd56l45o.cloudfront.net/"
 ]
 
 # ===== CORS =====
 cors_allowed_origins = [
   "http://localhost:3000",
   "http://seoul-webapp-env.eba-ccpra5ej.ap-northeast-2.elasticbeanstalk.com",
-  "https://dj5k42sej4rz6.cloudfront.net"
+  "https://dj5k42sej4rz6.cloudfront.net",
+  "https://d2msw6fd56l45o.cloudfront.net"
 ]
 
 # ===== 기존 Aurora RDS 사용 =====
@@ -109,6 +113,7 @@ db_port              = 5432
 # ===== ArgoCD =====
 # GitOps 배포를 사용하려면 true로 설정
 # 주의: EKS 클러스터가 생성된 후에만 true로 설정하세요
+# ArgoCD 설정
 enable_argocd = true
 
 # ArgoCD 도메인 (선택사항)
@@ -124,5 +129,6 @@ argocd_repo_username = ""
 argocd_repo_password = ""
 
 # ===== CloudFront =====
-# 기존 CloudFront Distribution ID (빈 문자열이면 새로 생성하지 않음)
-existing_cloudfront_id = "ECZLGZT9P6MSJ"
+# CloudFront는 remote state에서 자동으로 가져옵니다
+# 수동으로 설정이 필요한 경우에만 아래 값 사용
+# existing_cloudfront_id = ""

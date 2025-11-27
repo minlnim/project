@@ -289,47 +289,48 @@ resource "aws_iam_role_policy_attachment" "aws_load_balancer_controller_attach" 
   policy_arn = aws_iam_policy.aws_load_balancer_controller.arn
 }
 
+# AWS Load Balancer Controller는 사용하지 않음 (NLB로 대체)
 # Deploy AWS Load Balancer Controller using Helm
-resource "helm_release" "aws_load_balancer_controller" {
-  name       = "aws-load-balancer-controller"
-  repository = "https://aws.github.io/eks-charts"
-  chart      = "aws-load-balancer-controller"
-  namespace  = "kube-system"
-  version    = "1.10.1"
+# resource "helm_release" "aws_load_balancer_controller" {
+#   name       = "aws-load-balancer-controller"
+#   repository = "https://aws.github.io/eks-charts"
+#   chart      = "aws-load-balancer-controller"
+#   namespace  = "kube-system"
+#   version    = "1.10.1"
 
-  set {
-    name  = "clusterName"
-    value = module.eks.cluster_name
-  }
+#   set {
+#     name  = "clusterName"
+#     value = module.eks.cluster_name
+#   }
 
-  set {
-    name  = "serviceAccount.create"
-    value = "true"
-  }
+#   set {
+#     name  = "serviceAccount.create"
+#     value = "true"
+#   }
 
-  set {
-    name  = "serviceAccount.name"
-    value = "aws-load-balancer-controller"
-  }
+#   set {
+#     name  = "serviceAccount.name"
+#     value = "aws-load-balancer-controller"
+#   }
 
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.aws_load_balancer_controller.arn
-  }
+#   set {
+#     name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+#     value = aws_iam_role.aws_load_balancer_controller.arn
+#   }
 
-  set {
-    name  = "region"
-    value = var.region
-  }
+#   set {
+#     name  = "region"
+#     value = var.region
+#   }
 
-  set {
-    name  = "vpcId"
-    value = local.vpc_id
-  }
+#   set {
+#     name  = "vpcId"
+#     value = local.vpc_id
+#   }
 
-  depends_on = [
-    module.eks,
-    aws_iam_role_policy_attachment.aws_load_balancer_controller_attach
-  ]
-}
+#   depends_on = [
+#     module.eks,
+#     aws_iam_role_policy_attachment.aws_load_balancer_controller_attach
+#   ]
+# }
 

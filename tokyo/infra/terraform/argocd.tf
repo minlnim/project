@@ -10,7 +10,7 @@ resource "kubernetes_namespace" "argocd" {
     name = "argocd"
   }
 
-  depends_on = [module.eks]
+  depends_on = [module.eks, null_resource.wait_for_cluster]
 }
 
 # ArgoCD Helm Release
@@ -87,7 +87,6 @@ resource "helm_release" "argocd" {
   ]
 
   depends_on = [
-    helm_release.aws_load_balancer_controller,
     kubernetes_namespace.argocd[0],
     module.eks
   ]

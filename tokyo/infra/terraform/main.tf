@@ -21,9 +21,9 @@ terraform {
   }
 
   # backend "s3" {
-  #   bucket = "your-tfstate-bucket"
+  #   bucket = "terraform-s3-cheonsangyeon"
   #   key    = "tokyo/portal/terraform.tfstate"
-  #   region = "ap-northeast-1"
+  #   region = "ap-northeast-2"
   # }
 }
 

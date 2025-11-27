@@ -20,11 +20,11 @@ terraform {
     }
   }
 
-  # backend "s3" {
-  #   bucket = "your-tfstate-bucket"
-  #   key    = "seoul/portal/terraform.tfstate"
-  #   region = "ap-northeast-2"
-  # }
+  backend "s3" {
+    bucket = "terraform-s3-cheonsangyeon"
+    key    = "seoul/portal/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
 }
 
 provider "aws" {
@@ -45,8 +45,8 @@ resource "null_resource" "wait_for_cluster" {
 
 # Kubernetes provider configuration
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+  host                   = try(module.eks.cluster_endpoint, "")
+  cluster_ca_certificate = try(base64decode(module.eks.cluster_certificate_authority_data), "")
   
   exec {
     api_version = "client.authentication.k8s.io/v1beta1"
@@ -55,7 +55,7 @@ provider "kubernetes" {
       "eks",
       "get-token",
       "--cluster-name",
-      module.eks.cluster_name,
+      try(module.eks.cluster_name, "dummy"),
       "--region",
       var.aws_region
     ]
@@ -65,8 +65,8 @@ provider "kubernetes" {
 # Helm provider configuration
 provider "helm" {
   kubernetes {
-    host                   = module.eks.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
+    host                   = try(module.eks.cluster_endpoint, "")
+    cluster_ca_certificate = try(base64decode(module.eks.cluster_certificate_authority_data), "")
     
     exec {
       api_version = "client.authentication.k8s.io/v1beta1"
@@ -75,7 +75,7 @@ provider "helm" {
         "eks",
         "get-token",
         "--cluster-name",
-        module.eks.cluster_name,
+        try(module.eks.cluster_name, "dummy"),
         "--region",
         var.aws_region
       ]
@@ -128,8 +128,9 @@ locals {
   db_subnet_ids      = data.terraform_remote_state.seoul.outputs.seoul_beanstalk_subnet_ids
   public_subnet_ids  = data.terraform_remote_state.seoul.outputs.seoul_beanstalk_subnet_ids  # ELB용
   
-  # CloudFront 정보
+  # CloudFront 정보 (remote state에서 가져오기)
   cloudfront_domain = try(data.terraform_remote_state.cloudfront.outputs.cloudfront_domain_name, "")
+  cloudfront_id     = try(data.terraform_remote_state.cloudfront.outputs.cloudfront_distribution_id, var.existing_cloudfront_id)
 }
 
 ########################################
@@ -527,248 +528,250 @@ resource "aws_apigatewayv2_stage" "default" {
 # 7. Kubernetes ConfigMap for Backend
 ########################################
 
-resource "kubernetes_config_map" "backend" {
-  metadata {
-    name      = "backend-config"
-    namespace = "default"
-  }
+# GitHub Actions가 kubectl apply로 배포하므로 Terraform에서는 제거
+# resource "kubernetes_config_map" "backend" {
+#   metadata {
+#     name      = "backend-config"
+#     namespace = "default"
+#   }
 
-  data = {
-    DB_HOST              = local.db_endpoint
-    DB_PORT              = tostring(local.db_port)
-    DB_NAME              = var.db_name
-    DB_USER              = var.db_username
-    COGNITO_REGION       = var.aws_region
-    COGNITO_USER_POOL_ID = aws_cognito_user_pool.seoul.id
-    COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.seoul_spa.id
-    API_PORT             = "8080"
-  }
+#   data = {
+#     DB_HOST              = local.db_endpoint
+#     DB_PORT              = tostring(local.db_port)
+#     DB_NAME              = var.db_name
+#     DB_USER              = var.db_username
+#     COGNITO_REGION       = var.aws_region
+#     COGNITO_USER_POOL_ID = aws_cognito_user_pool.seoul.id
+#     COGNITO_CLIENT_ID    = aws_cognito_user_pool_client.seoul_spa.id
+#     API_PORT             = "8080"
+#   }
 
-  depends_on = [
-    null_resource.wait_for_cluster
-  ]
-}
+#   depends_on = [
+#     null_resource.wait_for_cluster
+#   ]
+# }
 
-resource "kubernetes_secret" "backend" {
-  metadata {
-    name      = "backend-secret"
-    namespace = "default"
-  }
+# resource "kubernetes_secret" "backend" {
+#   metadata {
+#     name      = "backend-secret"
+#     namespace = "default"
+#   }
 
-  data = {
-    DB_PASSWORD = var.db_password
-  }
+#   data = {
+#     DB_PASSWORD = var.db_password
+#   }
 
-  type = "Opaque"
+#   type = "Opaque"
 
-  depends_on = [
-    module.eks
-  ]
-}
+#   depends_on = [
+#     module.eks
+#   ]
+# }
 
 ########################################
 # 8. Kubernetes Deployment for Backend
 ########################################
 
-resource "kubernetes_deployment" "backend" {
-  metadata {
-    name      = "backend"
-    namespace = "default"
-    labels = {
-      app = "backend"
-    }
-  }
+# GitHub Actions가 kubectl apply로 배포하므로 Terraform에서는 제거
+# resource "kubernetes_deployment" "backend" {
+#   metadata {
+#     name      = "backend"
+#     namespace = "default"
+#     labels = {
+#       app = "backend"
+#     }
+#   }
 
-  # 이미지가 없어도 rollout 대기하지 않음
-  wait_for_rollout = false
+#   wait_for_rollout = false
 
-  spec {
-    replicas = 2
+#   spec {
+#     replicas = 2
 
-    selector {
-      match_labels = {
-        app = "backend"
-      }
-    }
+#     selector {
+#       match_labels = {
+#         app = "backend"
+#       }
+#     }
 
-    template {
-      metadata {
-        labels = {
-          app = "backend"
-        }
-      }
+#     template {
+#       metadata {
+#         labels = {
+#           app = "backend"
+#         }
+#       }
 
-      spec {
-        container {
-          name  = "backend"
-          image = "${aws_ecr_repository.backend.repository_url}:latest"
-          image_pull_policy = "IfNotPresent"  # 이미지 없어도 계속 실행
+#       spec {
+#         container {
+#           name  = "backend"
+#           image = "${aws_ecr_repository.backend.repository_url}:latest"
+#           image_pull_policy = "IfNotPresent"
 
-          port {
-            container_port = 8080
-            name          = "http"
-          }
+#           port {
+#             container_port = 8080
+#             name          = "http"
+#           }
 
-          env {
-            name = "DB_HOST"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "DB_HOST"
-              }
-            }
-          }
+#           env {
+#             name = "DB_HOST"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "DB_HOST"
+#               }
+#             }
+#           }
 
-          env {
-            name = "DB_PORT"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "DB_PORT"
-              }
-            }
-          }
+#           env {
+#             name = "DB_PORT"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "DB_PORT"
+#               }
+#             }
+#           }
 
-          env {
-            name = "DB_NAME"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "DB_NAME"
-              }
-            }
-          }
+#           env {
+#             name = "DB_NAME"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "DB_NAME"
+#               }
+#             }
+#           }
 
-          env {
-            name = "DB_USER"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "DB_USER"
-              }
-            }
-          }
+#           env {
+#             name = "DB_USER"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "DB_USER"
+#               }
+#             }
+#           }
 
-          env {
-            name = "DB_PASSWORD"
-            value_from {
-              secret_key_ref {
-                name = kubernetes_secret.backend.metadata[0].name
-                key  = "DB_PASSWORD"
-              }
-            }
-          }
+#           env {
+#             name = "DB_PASSWORD"
+#             value_from {
+#               secret_key_ref {
+#                 name = kubernetes_secret.backend.metadata[0].name
+#                 key  = "DB_PASSWORD"
+#               }
+#             }
+#           }
 
-          env {
-            name = "COGNITO_REGION"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "COGNITO_REGION"
-              }
-            }
-          }
+#           env {
+#             name = "COGNITO_REGION"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "COGNITO_REGION"
+#               }
+#             }
+#           }
 
-          env {
-            name = "COGNITO_USER_POOL_ID"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "COGNITO_USER_POOL_ID"
-              }
-            }
-          }
+#           env {
+#             name = "COGNITO_USER_POOL_ID"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "COGNITO_USER_POOL_ID"
+#               }
+#             }
+#           }
 
-          env {
-            name = "COGNITO_CLIENT_ID"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "COGNITO_CLIENT_ID"
-              }
-            }
-          }
+#           env {
+#             name = "COGNITO_CLIENT_ID"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "COGNITO_CLIENT_ID"
+#               }
+#             }
+#           }
 
-          env {
-            name = "API_PORT"
-            value_from {
-              config_map_key_ref {
-                name = kubernetes_config_map.backend.metadata[0].name
-                key  = "API_PORT"
-              }
-            }
-          }
+#           env {
+#             name = "API_PORT"
+#             value_from {
+#               config_map_key_ref {
+#                 name = kubernetes_config_map.backend.metadata[0].name
+#                 key  = "API_PORT"
+#               }
+#             }
+#           }
 
-          resources {
-            requests = {
-              memory = "256Mi"
-              cpu    = "200m"
-            }
-            limits = {
-              memory = "512Mi"
-              cpu    = "500m"
-            }
-          }
+#           resources {
+#             requests = {
+#               memory = "256Mi"
+#               cpu    = "200m"
+#             }
+#             limits = {
+#               memory = "512Mi"
+#               cpu    = "500m"
+#             }
+#           }
 
-          liveness_probe {
-            http_get {
-              path = "/health"
-              port = 8080
-            }
-            initial_delay_seconds = 30
-            period_seconds        = 10
-          }
+#           liveness_probe {
+#             http_get {
+#               path = "/health"
+#               port = 8080
+#             }
+#             initial_delay_seconds = 30
+#             period_seconds        = 10
+#           }
 
-          readiness_probe {
-            http_get {
-              path = "/health"
-              port = 8080
-            }
-            initial_delay_seconds = 10
-            period_seconds        = 5
-          }
-        }
-      }
-    }
-  }
+#           readiness_probe {
+#             http_get {
+#               path = "/health"
+#               port = 8080
+#             }
+#             initial_delay_seconds = 10
+#             period_seconds        = 5
+#           }
+#         }
+#       }
+#     }
+#   }
 
-  depends_on = [
-    kubernetes_config_map.backend,
-    kubernetes_secret.backend,
-    aws_ecr_repository.backend
-  ]
-}
+#   depends_on = [
+#     kubernetes_config_map.backend,
+#     kubernetes_secret.backend,
+#     aws_ecr_repository.backend
+#   ]
+# }
 
 ########################################
 # 9. Kubernetes Service for Backend
 ########################################
 
-resource "kubernetes_service" "backend" {
-  metadata {
-    name      = "backend"
-    namespace = "default"
-    labels = {
-      app = "backend"
-    }
-  }
+# GitHub Actions가 kubectl apply로 배포하므로 Terraform에서는 제거
+# resource "kubernetes_service" "backend" {
+#   metadata {
+#     name      = "backend"
+#     namespace = "default"
+#     labels = {
+#       app = "backend"
+#     }
+#   }
 
-  spec {
-    selector = {
-      app = "backend"
-    }
+#   spec {
+#     selector = {
+#       app = "backend"
+#     }
 
-    port {
-      port        = 8080
-      target_port = 8080
-      protocol    = "TCP"
-      name        = "http"
-    }
+#     port {
+#       port        = 8080
+#       target_port = 8080
+#       protocol    = "TCP"
+#       name        = "http"
+#     }
 
-    type = "ClusterIP"
-  }
+#     type = "ClusterIP"
+#   }
 
-  depends_on = [
-    kubernetes_deployment.backend
-  ]
-}
+#   depends_on = [
+#     kubernetes_deployment.backend
+#   ]
+# }
 
