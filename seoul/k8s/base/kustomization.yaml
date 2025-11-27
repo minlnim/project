@@ -13,7 +13,10 @@ namespace: default
 # K8s로 관리하는 리소스 (필요한 경우만)
 resources:
   - namespace.yaml
-  # - targetgroupbinding.yaml  # Terraform에서 kubernetes_manifest로 관리
+  - configmap.yaml
+  - secret.yaml
+  - deployment.yaml
+  - service.yaml
 
 # Common labels for all resources
 commonLabels:

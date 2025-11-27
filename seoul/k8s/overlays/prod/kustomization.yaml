@@ -5,7 +5,3 @@ namespace: default
 
 resources:
   - ../../base
-
-replicas:
-  - name: backend
-    count: 2
