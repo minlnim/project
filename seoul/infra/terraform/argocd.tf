@@ -121,7 +121,7 @@ resource "random_password" "argocd_admin" {
 }
 
 # ArgoCD Application for Backend
-# 주의: ArgoCD CRD가 완전히 설치된 후 kubectl로 별도 적용 필요
+# 주의: kubectl로 수동 생성됨 (seoul-backend-app.yaml)
 # resource "kubernetes_manifest" "argocd_app_backend" {
 #   count = var.enable_argocd && var.argocd_repo_url != "" ? 1 : 0
 # 
