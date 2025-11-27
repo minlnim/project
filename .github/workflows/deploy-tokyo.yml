@@ -102,6 +102,11 @@ jobs:
       - name: Deploy Frontend to Elastic Beanstalk
         working-directory: ./tokyo/frontend
         run: |
+          # 타임스탬프 변수 설정
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+          VERSION_LABEL="tokyo-frontend-${TIMESTAMP}"
+          S3_KEY="tokyo-frontend/deploy-${TIMESTAMP}.zip"
+          
           # Dockerrun.aws.json 업데이트
           cat > Dockerrun.aws.json <<EOF
           {
@@ -123,22 +128,24 @@ jobs:
           zip -r deploy.zip Dockerrun.aws.json .ebextensions || zip -r deploy.zip Dockerrun.aws.json
           
           # S3에 업로드
-          aws s3 cp deploy.zip s3://elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}/tokyo-frontend/deploy-$(date +%Y%m%d-%H%M%S).zip
+          aws s3 cp deploy.zip s3://elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}/${S3_KEY}
+          
+          # S3 업로드 확인
+          aws s3 ls s3://elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}/${S3_KEY}
           
           # Elastic Beanstalk 애플리케이션 버전 생성
-          VERSION_LABEL="tokyo-frontend-$(date +%Y%m%d-%H%M%S)"
           aws elasticbeanstalk create-application-version \
             --application-name tokyo-webapp \
-            --version-label $VERSION_LABEL \
-            --source-bundle S3Bucket="elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}",S3Key="tokyo-frontend/deploy-$(date +%Y%m%d-%H%M%S).zip"
+            --version-label ${VERSION_LABEL} \
+            --source-bundle S3Bucket="elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}",S3Key="${S3_KEY}"
           
           # Elastic Beanstalk 환경에 배포
           aws elasticbeanstalk update-environment \
             --application-name tokyo-webapp \
             --environment-name tokyo-webapp-env \
-            --version-label $VERSION_LABEL
+            --version-label ${VERSION_LABEL}
           
-          echo "Frontend deployment to Elastic Beanstalk initiated"
+          echo "Frontend deployment to Elastic Beanstalk initiated with version ${VERSION_LABEL}"
 
       - name: Wait for Elastic Beanstalk deployment
         run: |
