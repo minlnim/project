@@ -107,7 +107,7 @@ db_port              = 5432
 # ===== ArgoCD =====
 # GitOps 배포를 사용하려면 true로 설정
 # 주의: EKS 클러스터가 생성된 후에만 true로 설정하세요
-enable_argocd = false
+enable_argocd = true
 
 # ArgoCD 도메인 (선택사항)
 argocd_domain = "" # 예: "argocd.example.com"
@@ -115,7 +115,7 @@ argocd_domain = "" # 예: "argocd.example.com"
 # GitHub Repository 설정
 argocd_repo_url     = "https://github.com/minlnim/project.git"
 argocd_repo_branch  = "main"
-argocd_backend_path = "k8s/overlays/prod"
+argocd_backend_path = "tokyo/k8s/base"
 
 # Private Repository 접근 (필요시)
 argocd_repo_username = ""

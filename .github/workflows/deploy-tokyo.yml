@@ -16,6 +16,9 @@ env:
   ECR_BACKEND_REPO: tokyo-portal-tokyo-backend
   ECR_FRONTEND_REPO: tokyo-portal-tokyo-frontend
 
+permissions:
+  contents: write
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
