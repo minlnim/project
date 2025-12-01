@@ -52,6 +52,9 @@ jobs:
 
       - name: Update Kustomize image tag
         run: |
+          # 최신 변경사항 pull
+          git pull origin main --rebase || git pull origin main
+          
           # deployment.yaml의 이미지 업데이트
           sed -i "s|image:.*seoul-portal-seoul-backend.*|image: ${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_BACKEND_REPO }}:${{ env.IMAGE_TAG }}|g" seoul/k8s/base/deployment.yaml
           
@@ -59,7 +62,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add seoul/k8s/base/deployment.yaml
-          git commit -m "Update backend image to ${{ env.IMAGE_TAG }}"
+          git commit -m "Update backend image to ${{ env.IMAGE_TAG }}" || echo "No changes to commit"
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
 
       - name: Build and push Frontend image
