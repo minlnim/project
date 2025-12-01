@@ -45,6 +45,12 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan("combined"));
 
+// UTF-8 응답 헤더 설정
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 app.get("/health", async (req, res) => {
   try {
     await DB_POOL.query("SELECT 1");
@@ -112,10 +118,12 @@ app.use("/api", async (req, res, next) => {
   const auth = req.headers["authorization"] || "";
   const token = auth.replace("Bearer ", "");
   if (!token) {
+    console.log("JWT 토큰 없음 - Authorization 헤더:", auth);
     return res.status(401).json({ message: "JWT 토큰 없음" });
   }
   const decoded = jwt.decode(token);
   if (!decoded) {
+    console.log("JWT 디코드 실패 - 토큰:", token.substring(0, 20) + "...");
     return res.status(401).json({ message: "JWT 디코드 실패" });
   }
   req.user = decoded;
