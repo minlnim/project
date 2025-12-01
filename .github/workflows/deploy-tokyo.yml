@@ -128,26 +128,16 @@ jobs:
             --version-label ${VERSION_LABEL} \
             --source-bundle S3Bucket="elasticbeanstalk-${{ env.AWS_REGION }}-${{ env.AWS_ACCOUNT_ID }}",S3Key="${S3_KEY}"
           
-          # API Gateway URL 가져오기
-          API_GATEWAY_URL=$(cd ../../tokyo/infra/terraform && terraform output -raw api_gateway_url)
-          COGNITO_USER_POOL_ID=$(cd ../../tokyo/infra/terraform && terraform output -raw cognito_user_pool_id)
-          COGNITO_CLIENT_ID=$(cd ../../tokyo/infra/terraform && terraform output -raw cognito_client_id)
-          
-          # Elastic Beanstalk 환경 변수 업데이트
+          # Elastic Beanstalk 환경에 배포 (버전 + 환경 변수 한번에)
           aws elasticbeanstalk update-environment \
             --application-name tokyo-webapp \
             --environment-name tokyo-webapp-env \
+            --version-label ${VERSION_LABEL} \
             --option-settings \
-              Namespace=aws:elasticbeanstalk:application:environment,OptionName=API_GATEWAY_URL,Value=${API_GATEWAY_URL} \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=API_GATEWAY_URL,Value=https://x3ub6zqpe8.execute-api.ap-northeast-1.amazonaws.com \
               Namespace=aws:elasticbeanstalk:application:environment,OptionName=COGNITO_REGION,Value=${{ env.AWS_REGION }} \
-              Namespace=aws:elasticbeanstalk:application:environment,OptionName=COGNITO_USER_POOL_ID,Value=${COGNITO_USER_POOL_ID} \
-              Namespace=aws:elasticbeanstalk:application:environment,OptionName=COGNITO_CLIENT_ID,Value=${COGNITO_CLIENT_ID}
-          
-          # Elastic Beanstalk 환경에 배포
-          aws elasticbeanstalk update-environment \
-            --application-name tokyo-webapp \
-            --environment-name tokyo-webapp-env \
-            --version-label ${VERSION_LABEL}
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=COGNITO_USER_POOL_ID,Value=ap-northeast-1_lQgwdTN2n \
+              Namespace=aws:elasticbeanstalk:application:environment,OptionName=COGNITO_CLIENT_ID,Value=3o5h9d9ovje4o3f2235ahb076c
           
           echo "Frontend deployment to Elastic Beanstalk initiated with version ${VERSION_LABEL}"
 
