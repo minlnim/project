@@ -12,18 +12,21 @@ namespace: default
 
 # K8s로 관리하는 리소스 (필요한 경우만)
 resources:
-  - namespace.yaml
-  - configmap.yaml
-  - secret.yaml
-  - deployment.yaml
-  - service.yaml
+- namespace.yaml
+- configmap.yaml
+- secret.yaml
+- deployment.yaml
+- service.yaml
 
 # Common labels for all resources
 commonLabels:
-  app.kubernetes.io/name: seoul-portal
   app.kubernetes.io/component: backend
   app.kubernetes.io/managed-by: terraform
+  app.kubernetes.io/name: seoul-portal
 
 # Common annotations
 commonAnnotations:
-  description: "Seoul Portal Backend Application - Managed by Terraform"
+  description: Seoul Portal Backend Application - Managed by Terraform
+images:
+- name: 150502622488.dkr.ecr.ap-northeast-2.amazonaws.com/seoul-portal-seoul-backend
+  newTag: ae470f6-20251201-054349
