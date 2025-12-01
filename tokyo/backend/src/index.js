@@ -45,6 +45,12 @@ app.use(cors({
 app.use(express.json());
 app.use(morgan("combined"));
 
+// UTF-8 응답 헤더 설정
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
+
 app.get("/health", async (req, res) => {
   try {
     await DB_POOL.query("SELECT 1");
