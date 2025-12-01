@@ -5,3 +5,31 @@ namespace: default
 
 resources:
   - ../../base
+
+# Docker 이미지 설정
+images:
+  - name: 299145660695.dkr.ecr.ap-northeast-2.amazonaws.com/seoul-portal-seoul-backend
+    newName: 150502622488.dkr.ecr.ap-northeast-2.amazonaws.com/seoul-portal-seoul-backend
+    newTag: v1.0.0
+
+# Production 환경 설정 오버라이드
+patchesStrategicMerge:
+  - replica-patch.yaml
+
+# Production용 리소스 제한
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: backend
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/cpu
+        value: "1000m"
+      - op: replace
+        path: /spec/template/spec/containers/0/resources/limits/memory
+        value: "2Gi"
