@@ -4,6 +4,9 @@ metadata:
   name: backend-config
   namespace: default
 data:
-  DB_HOST: "aurora-global-seoul-writer.c0q1q5z1q5z1.ap-northeast-2.rds.amazonaws.com"
+  DB_HOST: "aurora-global-seoul-writer.czky26wqm1co.ap-northeast-2.rds.amazonaws.com"
   DB_PORT: "5432"
   DB_NAME: "corpportal"
+  AWS_REGION: "ap-northeast-2"
+  COGNITO_USER_POOL_ID: "ap-northeast-2_e5tqVVahP"
+  COGNITO_CLIENT_ID: "7o2taqnfu90tjutsi3ibm7uqtn"
