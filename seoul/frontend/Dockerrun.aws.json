@@ -1,7 +1,7 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "150502622488.dkr.ecr.ap-northeast-2.amazonaws.com/seoul-portal-seoul-frontend:v1.0.0",
+    "Name": "150502622488.dkr.ecr.ap-northeast-2.amazonaws.com/seoul-portal-seoul-frontend:20251201-172315",
     "Update": "true"
   },
   "Ports": [

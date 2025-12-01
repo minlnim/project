@@ -1,13 +1,13 @@
 {
   "AWSEBDockerrunVersion": "1",
   "Image": {
-    "Name": "PLACEHOLDER_ECR_FRONTEND_IMAGE",
+    "Name": "150502622488.dkr.ecr.ap-northeast-1.amazonaws.com/tokyo-portal-tokyo-frontend:20251201-172334",
     "Update": "true"
   },
   "Ports": [
     {
       "ContainerPort": 8080,
-      "HostPort": 8080
+      "HostPort": 80
     }
   ],
   "Logging": "/var/log/nginx"

@@ -1,0 +1,86 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: init-database
+  namespace: default
+spec:
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: mysql-init
+        image: mysql:8.0
+        command:
+        - /bin/bash
+        - -c
+        - |
+          mysql -h $DB_HOST -P $DB_PORT -u $DB_USER -p$DB_PASSWORD <<'EOF'
+          CREATE DATABASE IF NOT EXISTS corpportal;
+          USE corpportal;
+          
+          CREATE TABLE IF NOT EXISTS employees (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              email VARCHAR(255) UNIQUE NOT NULL,
+              name VARCHAR(100) NOT NULL,
+              department VARCHAR(100),
+              position VARCHAR(100),
+              phone VARCHAR(50),
+              hire_date DATE DEFAULT (CURRENT_DATE),
+              manager_id INT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          
+          INSERT INTO employees (email, name, department, position, phone) VALUES
+              ('ceo@company.com', '홍길동', '경영진', '대표이사', '010-1234-5678'),
+              ('cto@company.com', '김철수', '기술본부', '기술이사', '010-2345-6789'),
+              ('manager1@company.com', '이영희', '개발팀', '팀장', '010-3456-7890'),
+              ('dev1@company.com', '박민수', '개발팀', '선임개발자', '010-4567-8901'),
+              ('dev2@company.com', '최지혜', '개발팀', '주임개발자', '010-5678-9012'),
+              ('hr@company.com', '정수현', '인사팀', '팀장', '010-6789-0123')
+          ON DUPLICATE KEY UPDATE email = email;
+          
+          CREATE TABLE IF NOT EXISTS notices (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              title VARCHAR(255) NOT NULL,
+              content TEXT,
+              author_id INT,
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              views INT DEFAULT 0
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          
+          CREATE TABLE IF NOT EXISTS approvals (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              title VARCHAR(255) NOT NULL,
+              content TEXT,
+              requester_id INT,
+              approver_id INT,
+              status VARCHAR(50) DEFAULT 'pending',
+              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+          
+          SELECT 'Database initialized!' AS status;
+          EOF
+        env:
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_HOST
+        - name: DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              name: backend-config
+              key: DB_PORT
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: backend-secret
+              key: DB_PASSWORD
