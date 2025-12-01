@@ -57,7 +57,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add tokyo/k8s/base/deployment.yaml
           git commit -m "Update backend image to ${{ env.IMAGE_TAG }}"
-          git push
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:main
 
       - name: Build and push Frontend image
         working-directory: ./tokyo/frontend
