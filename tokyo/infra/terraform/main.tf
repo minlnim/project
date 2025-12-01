@@ -427,6 +427,30 @@ resource "aws_lb_listener" "backend" {
   }
 }
 
+# Auto Scaling Group attachment to Target Group
+data "aws_instances" "eks_nodes" {
+  filter {
+    name   = "tag:eks:cluster-name"
+    values = [module.eks.cluster_name]
+  }
+
+  filter {
+    name   = "instance-state-name"
+    values = ["running"]
+  }
+
+  depends_on = [module.eks]
+}
+
+resource "aws_lb_target_group_attachment" "eks_nodes" {
+  count            = length(data.aws_instances.eks_nodes.ids)
+  target_group_arn = aws_lb_target_group.backend.arn
+  target_id        = data.aws_instances.eks_nodes.ids[count.index]
+  port             = 30080  # NodePort
+
+  depends_on = [data.aws_instances.eks_nodes]
+}
+
 ########################################
 # 6. API Gateway HTTP API + VPC Link + JWT Authorizer
 ########################################
