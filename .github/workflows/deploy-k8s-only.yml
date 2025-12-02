@@ -1,0 +1,24 @@
+name: Deploy K8s Only (ArgoCD)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'seoul/k8s/**'
+  workflow_dispatch:
+
+jobs:
+  notify-argocd:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: ArgoCD will auto-sync
+        run: |
+          echo "✅ K8s manifests updated!"
+          echo "ArgoCD will automatically detect and sync within 3 minutes"
+          echo "Changed files:"
+          git diff --name-only HEAD~1 HEAD | grep 'seoul/k8s'

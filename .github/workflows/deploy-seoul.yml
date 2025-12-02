@@ -1,13 +1,13 @@
 name: Deploy Seoul Backend & Frontend
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'seoul/backend/**'
-      - 'seoul/frontend/**'
-  workflow_dispatch:
+  # push:  # 주석 처리하여 자동 실행 비활성화
+  #   branches:
+  #     - main
+  #   paths:
+  #     - 'seoul/backend/**'
+  #     - 'seoul/frontend/**'
+  workflow_dispatch:  # 수동 실행만 가능
 
 env:
   AWS_REGION: ap-northeast-2
