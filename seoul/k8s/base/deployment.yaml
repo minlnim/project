@@ -60,7 +60,7 @@ spec:
               name: backend-config
               key: COGNITO_CLIENT_ID
         - name: TEST_ENV
-          value: "demo-v1"
+          value: "demo-v2"
         resources:
           requests:
             cpu: 250m
