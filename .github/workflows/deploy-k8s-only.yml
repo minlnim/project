@@ -15,10 +15,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # 최근 2개 커밋 가져오기
 
       - name: ArgoCD will auto-sync
         run: |
           echo "✅ K8s manifests updated!"
           echo "ArgoCD will automatically detect and sync within 3 minutes"
+          echo ""
           echo "Changed files:"
-          git diff --name-only HEAD~1 HEAD | grep 'seoul/k8s'
+          git diff --name-only HEAD~1 HEAD | grep 'seoul/k8s' || echo "seoul/k8s/** files changed"
